@@ -248,8 +248,8 @@ class HookLauncher : IXposedHookLoadPackage, IXposedHookZygoteInit {
                             mStartY = correctedY
                             mIsShowingZone = false
                             mCurrentTaskId = -1
-                            // 只有从底部 15% 区域开始的滑动才被认为是潜在的上划手势
-                            mIsPotentialSwipeUp = correctedY > mScreenHeight * 0.85
+                            // 只有从底部 5% 区域开始的滑动才被认为是潜在的上划手势
+                            mIsPotentialSwipeUp = correctedY > mScreenHeight * 0.95
                             // log(TAG, "ACTION_DOWN at ($correctedX, $correctedY), potential=$mIsPotentialSwipeUp")
                         }
 
@@ -273,7 +273,26 @@ class HookLauncher : IXposedHookLoadPackage, IXposedHookZygoteInit {
                                             } else false
                                             
                                             if (taskId != -1 && !isHomeTask) {
-                                                capturedTaskId = taskId
+                                                // 增强校验：不仅要 Launcher 获得焦点，还要确保 Launcher 的 Activity 处于 Resumed 状态
+                                                // 这能有效排除沉浸模式下仅划出导航栏的情况
+                                                val isLauncherActive = runCatching {
+                                                    val activityThread = XposedHelpers.callStaticMethod(
+                                                        Class.forName("android.app.ActivityThread"),
+                                                        "currentActivityThread"
+                                                    )
+                                                    val mActivities = XposedHelpers.getObjectField(activityThread, "mActivities") as Map<*, *>
+                                                    
+                                                    // 检查当前进程中是否有任何 Activity 是处于 Resumed 状态的
+                                                    mActivities.values.any { activityRecord ->
+                                                        val paused = XposedHelpers.getBooleanField(activityRecord, "paused")
+                                                        val activity = XposedHelpers.getObjectField(activityRecord, "activity") as? Activity
+                                                        activity != null && !activity.isFinishing && !paused
+                                                    }
+                                                }.getOrDefault(false)
+
+                                                if (isLauncherActive) {
+                                                    capturedTaskId = taskId
+                                                }
                                             }
                                         }
                                     }

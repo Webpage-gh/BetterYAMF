@@ -11,7 +11,7 @@ plugins {
 
 android {
     val buildTime = System.currentTimeMillis()
-    val baseVersionName = "Beta1.0"
+    val baseVersionName = "Preview1.1"
     namespace = "com.buildsession.betterYAMF"
     compileSdk = 36
 
@@ -19,8 +19,13 @@ android {
         applicationId = "com.buildsession.betterYAMF"
         minSdk = 33
         targetSdk = 36
-        versionCode = 2
+        versionCode = 3
         versionName = baseVersionName
+
+        ndk {
+            abiFilters.add("arm64-v8a")
+            // abiFilters.addAll(listOf("armeabi-v7a", "x86", "x86_64"))
+        }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
