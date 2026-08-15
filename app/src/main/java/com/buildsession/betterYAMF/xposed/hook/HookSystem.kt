@@ -37,6 +37,11 @@ class HookSystem : IXposedHookZygoteInit, IXposedHookLoadPackage {
         // log(TAG, "buildtype: ${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE}) ${BuildConfig.BUILD_TYPE}")
         EzXHelperInit.initHandleLoadPackage(lpparam)
         Initiator.init(lpparam.classLoader)
+        runCatching {
+            FreeformHook.init(lpparam.classLoader)
+        }.onFailure {
+            log(TAG, "FreeformHook init failed, but continuing for legacy support", it)
+        }
 
          var serviceManagerHook: XC_MethodHook.Unhook? = null
          serviceManagerHook = findMethod("android.os.ServiceManager") {
@@ -59,13 +64,14 @@ class HookSystem : IXposedHookZygoteInit, IXposedHookLoadPackage {
 
          var activityManagerServiceSystemReadyHook: XC_MethodHook.Unhook? = null
          activityManagerServiceSystemReadyHook = findMethod("com.android.server.am.ActivityManagerService") {
-             name == "systemReady"
-         }.hookAfter {
-             activityManagerServiceSystemReadyHook?.unhook()
-             YAMFManager.activityManagerService = it.thisObject
-             YAMFManager.systemReady()
-             // log(TAG, "system ready")
-         }
+            name == "systemReady"
+        }.hookAfter {
+            activityManagerServiceSystemReadyHook?.unhook()
+            YAMFManager.activityManagerService = it.thisObject
+            YAMFManager.systemReady()
+            XposedBridge.log("$TAG: System ready, reYAMF services initialized.")
+            // log(TAG, "system ready")
+        }
         runCatching {
             findMethod("com.android.server.am.ActivityManagerService") {
                 name == "checkBroadcastFromSystem"

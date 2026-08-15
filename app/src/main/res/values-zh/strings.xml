@@ -40,6 +40,9 @@
     <string name="reyamf">BetterYAMF</string>
     <string name="a_yamf_fork">a reYAMF fork</string>
     <string name="view_type">视图类型</string>
+    <string name="window_mode">小窗实现方式</string>
+    <string name="window_mode_vd">虚拟显示器 (旧版)</string>
+    <string name="window_mode_freeform">丝滑小窗 (原生)</string>
     <string name="dpi_density">DPI 密度</string>
     <string name="flags">高级参数</string>
     <string name="colored_controller">彩色控制按钮</string>
@@ -51,6 +54,7 @@
     <string name="transient_taskbar_hook">支持临时任务栏启动小窗</string>
     <string name="use_app_list">使用应用列表</string>
     <string name="force_show_ime">强制显示输入法</string>
+    <string name="force_prevent_relaunch">强制阻止窗口重载</string>
     <string name="launcher_might_need_to_be_restarted_twice_for_hooks_to_take_effect">* 桌面启动器可能需要重启两次才能生效</string>
     <string name="current_to_window">将当前应用切换为小窗</string>
     <string name="launch_sidebar">启动侧边栏</string>
@@ -69,4 +73,9 @@
     <string name="fullscreen">Fullscreen</string>
     <string name="collapse">Collapse</string>
     <string name="close">Close</string>
+    <string name="reset_config">重置为默认配置</string>
+    <string name="reset_config_title">重置配置</string>
+    <string name="reset_config_message">确定要将所有设置恢复为默认值吗？</string>
+    <string name="cancel">取消</string>
+    <string name="reset">重置</string>
 </resources>

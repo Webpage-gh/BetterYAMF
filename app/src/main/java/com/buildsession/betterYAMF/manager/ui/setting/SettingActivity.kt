@@ -63,55 +63,20 @@ class SettingActivity : AppCompatActivity() {
     private fun initData() {
         binding?.apply {
             config = gson.fromJson(YAMFManagerProxy.configJson, YAMFConfig::class.java)
-            etReduceDPI.setText(config.reduceDPI.toString())
-            btnFlags.text = config.flags.toString()
-            sColoerd.isChecked = config.coloredController
-            sBackHome.isChecked = config.recentBackHome
-            sShowIMEinWindow.isChecked = config.showImeInWindow
-            etSizeH.setText(config.defaultWindowHeight.toString())
-            etSizeW.setText(config.defaultWindowWidth.toString())
-            sHookLauncherHookRecents.isChecked = config.hookLauncher.hookRecents
-            sHookLauncherHookTaskbar.isChecked = config.hookLauncher.hookTaskbar
-            sHookLauncherHookPopup.isChecked = config.hookLauncher.hookPopup
-            sHookLauncherHookTransientTaskbar.isChecked = config.hookLauncher.hookTransientTaskbar
-            sUseAppList.isChecked = preference.getBoolean("useAppList", true)
-            sForceShowIME.isChecked = config.showForceShowIME
-            sliderRounded.value = config.windowRoundedCorner.toFloat()
-            sliderAnimationSpeed.value = config.animationSpeed
-            tvRoundedValue.text = "${config.windowRoundedCorner}"
-            tvAnimationSpeedValue.text = if (config.animationSpeed == 5100f){
-                getString(R.string.default_speed)
-            } else{
-                "${config.animationSpeed.toFloat()}"
-            }
+            applyConfigToViews()
 
-            btnSurface.text = when (config.surfaceView) {
-                0 -> {
-                    "Texture View"
-                }
-                1 -> {
-                    "Surface View"
-                }
-                else -> {
-                    Log.d("reYAMF", "surfaceView: " + config.surfaceView.toString())
-                    "Unavailable"
-                }
-            }
-
-            btnWindowsfy.text = when (config.windowfy) {
-                0 -> {
-                    "Move Task"
-                }
-                1 -> {
-                    "Start Activity"
-                }
-                2 -> {
-                    "Hybrid"
-                }
-                else -> {
-                    Log.d("reYAMF", "windowfy: " + config.windowfy.toString())
-                    "Unavailable"
-                }
+            btnResetConfig.setOnClickListener {
+                MaterialAlertDialogBuilder(this@SettingActivity)
+                    .setTitle(R.string.reset_config_title)
+                    .setMessage(R.string.reset_config_message)
+                    .setNegativeButton(R.string.cancel, null)
+                    .setPositiveButton(R.string.reset) { _, _ ->
+                        config = YAMFConfig()
+                        preference.edit().putBoolean("useAppList", true).apply()
+                        applyConfigToViews()
+                        YAMFManagerProxy.updateConfig(gson.toJson(config))
+                    }
+                    .show()
             }
 
             btnFlags.setOnClickListener {
@@ -155,6 +120,18 @@ class SettingActivity : AppCompatActivity() {
                     }
                 }.show()
             }
+            btnWindowMode.setOnClickListener {
+                PopupMenu(this@SettingActivity, btnWindowMode).apply {
+                    val modes = listOf(getString(R.string.window_mode_vd), getString(R.string.window_mode_freeform))
+                    modes.forEachIndexed { index, i ->
+                        menu.add(i).setOnMenuItemClickListener {
+                            btnWindowMode.text = i
+                            config.windowMode = index
+                            true
+                        }
+                    }
+                }.show()
+            }
             sliderRounded.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
                 override fun onStartTrackingTouch(slider: Slider) {}
 
@@ -178,6 +155,55 @@ class SettingActivity : AppCompatActivity() {
                     YAMFManagerProxy.updateConfig(gson.toJson(config))
                 }
             })
+        }
+    }
+
+    private fun applyConfigToViews() {
+        binding?.apply {
+            etReduceDPI.setText(config.reduceDPI.toString())
+            btnFlags.text = config.flags.toString()
+            sColoerd.isChecked = config.coloredController
+            sBackHome.isChecked = config.recentBackHome
+            sShowIMEinWindow.isChecked = config.showImeInWindow
+            etSizeH.setText(config.defaultWindowHeight.toString())
+            etSizeW.setText(config.defaultWindowWidth.toString())
+            sHookLauncherHookRecents.isChecked = config.hookLauncher.hookRecents
+            sHookLauncherHookTaskbar.isChecked = config.hookLauncher.hookTaskbar
+            sHookLauncherHookPopup.isChecked = config.hookLauncher.hookPopup
+            sHookLauncherHookTransientTaskbar.isChecked = config.hookLauncher.hookTransientTaskbar
+            sUseAppList.isChecked = preference.getBoolean("useAppList", true)
+            sForceShowIME.isChecked = config.showForceShowIME
+            sForcePreventRelaunch.isChecked = config.forcePreventRelaunch
+            sliderRounded.value = config.windowRoundedCorner.toFloat()
+            sliderAnimationSpeed.value = config.animationSpeed
+            tvRoundedValue.text = "${config.windowRoundedCorner}"
+            tvAnimationSpeedValue.text = if (config.animationSpeed == 5100f) {
+                getString(R.string.default_speed)
+            } else {
+                "${config.animationSpeed.toFloat()}"
+            }
+            btnSurface.text = when (config.surfaceView) {
+                0 -> "Texture View"
+                1 -> "Surface View"
+                else -> {
+                    Log.d("reYAMF", "surfaceView: ${config.surfaceView}")
+                    "Unavailable"
+                }
+            }
+            btnWindowMode.text = when (config.windowMode) {
+                0 -> getString(R.string.window_mode_vd)
+                1 -> getString(R.string.window_mode_freeform)
+                else -> "Unavailable"
+            }
+            btnWindowsfy.text = when (config.windowfy) {
+                0 -> "Move Task"
+                1 -> "Start Activity"
+                2 -> "Hybrid"
+                else -> {
+                    Log.d("reYAMF", "windowfy: ${config.windowfy}")
+                    "Unavailable"
+                }
+            }
         }
     }
 
@@ -224,6 +250,7 @@ class SettingActivity : AppCompatActivity() {
             config.hookLauncher.hookPopup = sHookLauncherHookPopup.isChecked
             config.hookLauncher.hookTransientTaskbar = sHookLauncherHookTransientTaskbar.isChecked
             config.showForceShowIME = sForceShowIME.isChecked
+            config.forcePreventRelaunch = sForcePreventRelaunch.isChecked
             preference.edit().putBoolean("useAppList", sUseAppList.isChecked).apply()
             YAMFManagerProxy.updateConfig(gson.toJson(config))
         }

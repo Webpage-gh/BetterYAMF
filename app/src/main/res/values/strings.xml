@@ -40,6 +40,9 @@
     <string name="reyamf">BetterYAMF</string>
     <string name="a_yamf_fork">a reYAMF fork</string>
     <string name="view_type">View Type</string>
+    <string name="window_mode">Window Implementation Method</string>
+    <string name="window_mode_vd">Virtual Display (Legacy)</string>
+    <string name="window_mode_freeform">Smooth Freeform (Native)</string>
     <string name="dpi_density">DPI Density</string>
     <string name="flags">Flags</string>
     <string name="colored_controller">Colored Controller</string>
@@ -51,6 +54,7 @@
     <string name="transient_taskbar_hook">Transient Taskbar Hook</string>
     <string name="use_app_list">Use App List</string>
     <string name="force_show_ime">Force Show IME</string>
+    <string name="force_prevent_relaunch">Force Prevent Window Relaunch</string>
     <string name="launcher_might_need_to_be_restarted_twice_for_hooks_to_take_effect">* Launcher might need to be restarted twice for hooks to take effect</string>
     <string name="current_to_window">Current to window</string>
     <string name="launch_sidebar">Launch sidebar</string>
@@ -69,4 +73,9 @@
     <string name="fullscreen">Fullscreen</string>
     <string name="collapse">Collapse</string>
     <string name="close">Close</string>
+    <string name="reset_config">Reset to default configuration</string>
+    <string name="reset_config_title">Reset configuration</string>
+    <string name="reset_config_message">Reset all settings to their default values?</string>
+    <string name="cancel">Cancel</string>
+    <string name="reset">Reset</string>
 </resources>

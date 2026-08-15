@@ -637,25 +637,32 @@ class AppWindow(
             animateAlpha(binding.clSuperLayout, 1f, 0f)
         }
 
-        virtualDisplay = Instances.displayManager.createVirtualDisplay(
-            "yamf${System.currentTimeMillis()}", config.defaultWindowWidth, config.defaultWindowHeight, newDpi-config.reduceDPI, null, flags
-        )
-        displayId = virtualDisplay.display.displayId
-        (Instances.windowManager as WindowManagerHidden).setDisplayImePolicy(displayId, if (config.showImeInWindow) WindowManagerHidden.DISPLAY_IME_POLICY_LOCAL else WindowManagerHidden.DISPLAY_IME_POLICY_FALLBACK_DISPLAY)
-        
-        (surfaceView as? TextureView)?.surfaceTextureListener = this
-        (surfaceView as? SurfaceView)?.holder?.addCallback(this)
-        var failCount = 0
-        fun watchRotation() {
-            runCatching {
-                Instances.iWindowManager.watchRotation(rotationWatcher, displayId)
-            }.onFailure {
-                failCount++
-                // Log.d(TAG, "watchRotation: fail $failCount")
-                watchRotation()
+        if (config.windowMode == 0) { // Virtual Display
+            virtualDisplay = Instances.displayManager.createVirtualDisplay(
+                "yamf${System.currentTimeMillis()}", config.defaultWindowWidth, config.defaultWindowHeight, newDpi-config.reduceDPI, null, flags
+            )
+            displayId = virtualDisplay.display.displayId
+            (Instances.windowManager as WindowManagerHidden).setDisplayImePolicy(displayId, if (config.showImeInWindow) WindowManagerHidden.DISPLAY_IME_POLICY_LOCAL else WindowManagerHidden.DISPLAY_IME_POLICY_FALLBACK_DISPLAY)
+            
+            (surfaceView as? TextureView)?.surfaceTextureListener = this
+            (surfaceView as? SurfaceView)?.holder?.addCallback(this)
+            var failCount = 0
+            fun watchRotation() {
+                runCatching {
+                    Instances.iWindowManager.watchRotation(rotationWatcher, displayId)
+                }.onFailure {
+                    failCount++
+                    // Log.d(TAG, "watchRotation: fail $failCount")
+                    watchRotation()
+                }
             }
+            watchRotation()
+        } else { // Smooth Freeform
+            displayId = 0 // Main display
+            surfaceView.visibility = View.GONE // Hide the surface view, task renders directly
+            binding.cvParent.post(::updateSmoothBounds)
         }
-        watchRotation()
+        
         context.registerReceiver(broadcastReceiver, IntentFilter(ACTION_RESET_ALL_WINDOW), Context.RECEIVER_EXPORTED)
         val width = config.defaultWindowWidth.dpToPx().toInt()
         val height = config.defaultWindowHeight.dpToPx().toInt()
@@ -707,6 +714,10 @@ class AppWindow(
         //TODO: Find me a better alternative for less resource usage instead of polling
         backGestureJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
+                if (config.windowMode == 1) { // In smooth mode, we don't handle back gestures here for now
+                    delay(1000)
+                    continue
+                }
                 if (isMini || isCollapsed) {
                     withContext(Dispatchers.Main) {
                         bindingLeftBackGesture.root.visibility = View.GONE
@@ -746,7 +757,14 @@ class AppWindow(
         runCatching { Instances.iWindowManager.removeRotationWatcher(rotationWatcher) }
         
         YAMFManager.removeWindow(displayId)
-        runCatching { virtualDisplay.release() }
+        if (config.windowMode == 0) {
+            runCatching { virtualDisplay.release() }
+        } else {
+            // In smooth mode, if the task is still alive, we should move it back to full screen or close it
+            // For now, let's just stop tracking it
+            YAMFManager.smoothFreeformTasks.remove(currentTaskId)
+            YAMFManager.smoothFreeformBounds.remove(currentTaskId)
+        }
         
         runMain {
             if (binding.root.isAttachedToWindow) {
@@ -796,6 +814,26 @@ class AppWindow(
     private fun moveToTopIfNeed(event: MotionEvent) {
         if (event.action == MotionEvent.ACTION_UP && YAMFManager.isTop(displayId).not()) {
             moveToTop()
+        }
+        if (config.windowMode == 1) {
+            updateSmoothBounds()
+        }
+    }
+
+    private fun updateSmoothBounds() {
+        if (config.windowMode != 1 || currentTaskId == -1) return
+        
+        val location = IntArray(2)
+        binding.cvParent.getLocationOnScreen(location)
+        val rect = android.graphics.Rect(
+            location[0], 
+            location[1], 
+            location[0] + binding.cvParent.width, 
+            location[1] + binding.cvParent.height
+        )
+        
+        if (YAMFManager.smoothFreeformBounds[currentTaskId] != rect) {
+            YAMFManager.updateSmoothBounds(currentTaskId, rect)
         }
     }
 
@@ -1427,6 +1465,7 @@ class AppWindow(
             params.x = (startX + (e2.rawX - e1.rawX)).toInt()
             params.y = (startY + (e2.rawY - e1.rawY)).toInt()
             Instances.windowManager.updateViewLayout(binding.root, params)
+            if (config.windowMode == 1) updateSmoothBounds()
             last2X = lastX
             last2Y = lastY
             lastX = e2.rawX
@@ -1461,7 +1500,10 @@ class AppWindow(
                 if (sign(velocityX) != sign(e2.rawX - last2X)) return@runCatching
                 xAnimation = flingAnimationOf({
                     params.x = it.toInt()
-                    runCatching { Instances.windowManager.updateViewLayout(binding.root, params) }
+                    runCatching { 
+                        Instances.windowManager.updateViewLayout(binding.root, params)
+                        if (config.windowMode == 1) updateSmoothBounds()
+                    }
                 }, {
                     params.x.toFloat()
                 })
@@ -1483,7 +1525,10 @@ class AppWindow(
                 if (sign(velocityY) != sign(e2.rawY - last2Y)) return@runCatching
                 yAnimation = flingAnimationOf({
                     params.y = it.toInt()
-                    runCatching { Instances.windowManager.updateViewLayout(binding.root, params) }
+                    runCatching { 
+                        Instances.windowManager.updateViewLayout(binding.root, params)
+                        if (config.windowMode == 1) updateSmoothBounds()
+                    }
                 }, {
                     params.y.toFloat()
                 })

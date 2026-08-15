@@ -21,6 +21,11 @@ data class Config(
      * 1: SurfaceView
     */
     var surfaceView: Int = 1,
+    /*
+     * 0: Virtual Display (Legacy)
+     * 1: Native Freeform (Smooth)
+    */
+    var windowMode: Int = 0,
     var recentBackHome: Boolean = false,
     var showImeInWindow: Boolean = false,
     var defaultWindowWidth: Int = 280,
@@ -35,7 +40,8 @@ data class Config(
     var sidebarTransparency: Int = 80,
     var windowRoundedCorner: Int = 20,
     var sidebarPosition: Boolean = false,
-    var animationSpeed: Float = 5100f
+    var animationSpeed: Float = 5100f,
+    var forcePreventRelaunch: Boolean = false
 ) {
     data class HookLauncher(
         var hookRecents: Boolean = true,

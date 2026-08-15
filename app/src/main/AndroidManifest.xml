@@ -130,6 +130,9 @@
         <meta-data
             android:name="xposedscope"
             android:resource="@array/xposed_scope" />
+        <meta-data
+            android:name="xposedrecommend"
+            android:resource="@array/xposed_scope" />
     </application>
 
 </manifest>
