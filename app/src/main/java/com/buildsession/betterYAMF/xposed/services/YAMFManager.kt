@@ -368,7 +368,9 @@ object YAMFManager : IYAMFManager.Stub() {
         runMain {
             val task = getTopRootTask(0) ?: return@runMain
             if (task.baseActivity?.packageName != "com.android.launcher3") {
-                createWindow(StartCmd(taskId = task.taskId))
+                createWindow(
+                    StartCmd(taskId = task.taskId, componentName = task.topActivity, userId = task.userId)
+                )
             }
         }
     }

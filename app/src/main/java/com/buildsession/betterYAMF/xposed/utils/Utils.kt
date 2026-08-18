@@ -96,7 +96,7 @@ fun moveToDisplay(context: Context, taskId: Int, componentName: ComponentName, u
     when (YAMFManager.config.windowfy) {
         0 -> {
             runCatching {
-                moveTask(taskId, displayId)
+                moveTask(resolveRootTaskId(taskId) ?: taskId, displayId)
             }.onException {
                 TipUtil.showToast("Unable to move task $taskId")
             }
@@ -110,7 +110,7 @@ fun moveToDisplay(context: Context, taskId: Int, componentName: ComponentName, u
         }
         2 -> {
             runCatching {
-                moveTask(taskId, displayId)
+                moveTask(resolveRootTaskId(taskId) ?: taskId, displayId)
             }.onException {
                 TipUtil.showToast("Unable to move task $taskId")
                 runCatching {
@@ -128,10 +128,19 @@ fun StartCmd.startAuto(displayId: Int) {
         canStartActivity && canMoveTask ->
             moveToDisplay(Instances.systemContext, taskId!!, componentName!!, userId!!, displayId)
         canMoveTask -> {
+            val rootTaskId = resolveRootTaskId(taskId!!) ?: taskId!!
             runCatching {
-                moveTask(taskId!!, displayId)
+                moveTask(rootTaskId, displayId)
             }.onException {
+                log("BetterYAMF", "can't move task $taskId (rootTaskId=$rootTaskId)", it)
                 TipUtil.showToast("can't move task $taskId")
+                if (componentName != null && userId != null) {
+                    runCatching {
+                        startActivity(Instances.systemContext, componentName!!, userId!!, displayId)
+                    }.onException {
+                        TipUtil.showToast("can't start activity $componentName")
+                    }
+                }
             }
         }
         canStartActivity -> {
@@ -142,6 +151,23 @@ fun StartCmd.startAuto(displayId: Int) {
             }
         }
     }
+}
+
+fun resolveRootTaskId(leafId: Int): Int? {
+    if (leafId <= 0) return null
+    val displays = runCatching {
+        (Instances.activityTaskManager.invokeMethod("getDisplayIds") as IntArray).toList()
+    }.getOrDefault(listOf(0))
+    for (displayId in displays) {
+        val infos = runCatching {
+            Instances.activityTaskManager.getAllRootTaskInfosOnDisplay(displayId)
+        }.getOrNull() ?: continue
+        for (info in infos) {
+            if (info.taskId == leafId) return leafId
+            if (info.childrenTaskIds?.contains(leafId) == true) return info.taskId
+        }
+    }
+    return null
 }
 
 fun getTopRootTask(displayId: Int): ActivityTaskManager.RootTaskInfo? {
