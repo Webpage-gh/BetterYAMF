@@ -164,13 +164,20 @@ fun resolveRootTaskId(leafId: Int): Int? {
             Instances.activityTaskManager.getAllRootTaskInfosOnDisplay(displayId)
         }.getOrNull() ?: continue
         for (info in infos) {
-            if (info.taskId == leafId) return leafId
+            if (info.taskId == leafId) {
+                log("BetterYAMF", "resolveRootTaskId($leafId) -> itself (root task)")
+                return leafId
+            }
             val children: List<Int>? = runCatching {
                 XposedHelpers.getObjectField(info, "childrenTaskIds") as? List<Int>
             }.getOrNull()
-            if (children?.contains(leafId) == true) return info.taskId
+            if (children?.contains(leafId) == true) {
+                log("BetterYAMF", "resolveRootTaskId($leafId) -> root ${info.taskId} (children=$children)")
+                return info.taskId
+            }
         }
     }
+    log("BetterYAMF", "resolveRootTaskId($leafId) -> not found in displays=$displays")
     return null
 }
 

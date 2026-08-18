@@ -459,8 +459,12 @@ class HookLauncher : IXposedHookLoadPackage, IXposedHookZygoteInit {
                         val topComponent = XposedHelpers.callMethod(itemInfoTmp, "getTargetComponent") as ComponentName
                         intent.putExtra(YAMFManager.EXTRA_COMPONENT_NAME, topComponent)
                     }.onFailure {
-                        val topComponent = extractComponentInfo(itemInfo.toString()).toString()
-                        intent.putExtra(YAMFManager.EXTRA_COMPONENT_NAME, topComponent)
+                        val topComponent = extractComponentInfo(itemInfo.toString())
+                        if (topComponent != null) {
+                            intent.putExtra(YAMFManager.EXTRA_COMPONENT_NAME, topComponent)
+                        } else {
+                            log(TAG, "hookRecent: failed to extract componentName from itemInfo=$itemInfo")
+                        }
                     }
                     intent.putExtra(YAMFManager.EXTRA_TASK_ID, taskId)
                     intent.putExtra(YAMFManager.EXTRA_USER_ID, userId)
