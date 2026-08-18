@@ -44,6 +44,7 @@ import com.buildsession.betterYAMF.common.onException
 import com.buildsession.betterYAMF.manager.services.YAMFManagerProxy
 import com.buildsession.betterYAMF.xposed.services.YAMFManager
 import de.robv.android.xposed.XposedBridge
+import de.robv.android.xposed.XposedHelpers
 import com.buildsession.betterYAMF.common.model.Config as YAMFConfig
 
 fun log(tag: String, message: String) {
@@ -164,7 +165,10 @@ fun resolveRootTaskId(leafId: Int): Int? {
         }.getOrNull() ?: continue
         for (info in infos) {
             if (info.taskId == leafId) return leafId
-            if (info.childrenTaskIds?.contains(leafId) == true) return info.taskId
+            val children: List<Int>? = runCatching {
+                XposedHelpers.getObjectField(info, "childrenTaskIds") as? List<Int>
+            }.getOrNull()
+            if (children?.contains(leafId) == true) return info.taskId
         }
     }
     return null

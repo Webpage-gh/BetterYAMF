@@ -368,8 +368,9 @@ object YAMFManager : IYAMFManager.Stub() {
         runMain {
             val task = getTopRootTask(0) ?: return@runMain
             if (task.baseActivity?.packageName != "com.android.launcher3") {
+                val topUserId = runCatching { XposedHelpers.getIntField(task, "userId") as Int }.getOrNull()
                 createWindow(
-                    StartCmd(taskId = task.taskId, componentName = task.topActivity, userId = task.userId)
+                    StartCmd(taskId = task.taskId, componentName = task.topActivity, userId = topUserId)
                 )
             }
         }
